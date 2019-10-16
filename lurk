@@ -1,0 +1,50 @@
+#!/bin/bash
+
+usage() { echo "Usage: $0 [-yna]" 1>&2; exit 1;} 
+
+listeners=`who -w | grep -Po '[a-z]+[0-9]*\s+\+'`
+num_listeners=$(wc -l <<< "${listeners}")
+
+both=`who -w | grep -Po '[a-z]+[0-9]*\s+[\+\-]'`
+num_both=`who | wc -l`
+
+muters=`who -w | grep -Po '[a-z]+[0-9]*\s+\-'`
+num_muters=$(wc -l <<< "${muters}")
+
+if [ $# -ge 1 ] # at least on option 
+then
+    while getopts ":yna" opt; do # silence errors
+        case "${opt}" in
+            y)  
+                echo "Users online with msg -y"
+				echo -n "total "
+				echo $num_listeners
+				echo "$listeners"
+				echo
+                ;;
+            n)  
+                echo "Users online with msg -n"
+                echo -n "total "
+                echo $num_muters
+                echo "$muters"
+				echo
+                ;;
+            a)  
+                echo "Users online"
+				echo -n "total "
+				echo $num_both
+				echo "$both"
+				echo
+                ;;
+	    *) #wildcard if didn't encounter any of the above cases
+			usage
+			;;
+        esac
+    done
+else # default
+    echo "Users online with msg -y"
+    echo -n "total "
+    echo $num_listeners
+    echo "$listeners"
+    echo
+fi

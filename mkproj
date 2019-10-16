@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# 2.
+if [ "$#" -ne 2 ] # test correct number of arguments
+then
+    echo "Error: Wrong number of arguments. Please type ./mkproj ARGUMENT OWNER. The argument is the name of the project. The OWNER is the user name the project belongs to."
+	exit 1
+fi
+
+# 3.
+mkdir -p Projects # only mkdir if it does not exist, if not nothing is done
+
+# 4.
+cd Projects
+
+# 5.
+if [ -d "$1" ]
+then
+    echo "Error: The project name has already been used. Please select another project name and try again."
+	exit 1
+fi
+
+# 6.
+mkdir "$1"
+
+# 7.
+cd "$1"
+
+# 8.
+mkdir archive backup docs assets database source
+ls
+
+# 9.
+cd docs
+echo "Created by: $2" > readme.txt
+cat readme.txt

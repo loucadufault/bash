@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#2
+if [ $# -lt 3 ]
+then
+    echo "You have the incorrect number of arguments. The correct syntax is: ./backup SWITCH FILES DEST MESSAGE. Please try again."
+	exit 1
+fi
+
+#parse switches
+if [[ "$1" =~ ^-.+$ ]] #matches any argument like -x -Xy
+then
+	if [ "$1" == "-D" ] #only valid switch is -D
+	then
+		switch="D" #remember the switch for later
+    	shift #shift down all params, so that $1 will point to FILES regardless of whether there was aswitch
+	else
+		echo "You have invalid switches. The only correct switch is -D for delete original files"
+		exit 1
+	fi
+fi
+
+#parse files
+files="$1" #assume the arg (or the first of many) passed in the param position FILES is a valid file
+shift
+while [ -f "$1" ] #while the next param is a valid file
+do
+	files+=" $1" #concatenate it to the current file var separated by a space
+	shift #now that the current $1 param is stored, shift to handle the next param again in position 1
+done #param $1 was not a valid file, thus there are no more files and the arg currently in $1 is the DEST param
+
+#parse dest
+dest=$1
+shift
+
+#3
+mkdir -p "$dest"
+
+#4
+filename=backup`date +%F`.tar
+tar -cvf "$dest/$filename" $files
+
+if [ "$switch" == "D" ] #switch for deleting original files
+then
+	if [ -d $files ] #case where the FILES arg passed was a directory without wildcards
+	then
+		rm $files/* #rm all files in the directory
+	else #case where the FILES arg passed was a wildcard file or a list of files
+		rm $files 	#unquoted variable is subject to word splitting into 
+			    	#args for rm when expanded
+	fi
+fi
+
+#5
+chmod 600 "$dest/$filename" #RW only for the user, i.e. -rw-------
+
+#6
+message="$*" #store remaining args as a space deliminated string
+touch "$dest/backups.log" #will create file if DNE, otherwise will only update timestamps 
+echo `date +"%F %T"` "$message" >> "$dest/backups.log" #YYYY-MM-DD HH:MM:SS message words

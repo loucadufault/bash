@@ -1,0 +1,63 @@
+#!/bin/bash
+
+message=''
+
+usage() { echo "Usage: $0 [-m  <string>]" 1>&2; exit 1;}
+
+if [ $# -gt 0 ]
+then
+    while getopts ":m:h" opt; do #silence errors
+        case "${opt}" in
+            m)
+                message=${OPTARG}
+                ;;
+	    	:)
+	        	echo
+	    		;; 
+			*)
+                usage
+                ;;
+        esac
+    done
+fi
+
+git status # added this
+
+if [[ ! "$(git status --porcelain)" ]]
+then
+    #echo "nothing to commit, working tree clean";
+	exit 1
+fi
+
+while [[ ! $message ]]
+do
+    echo "Please enter a commit message."
+    read -r m
+done
+
+echo
+echo "This command will run:"
+echo "git add ."
+echo -n "git commit -m \""
+echo -n ${message:0:50}
+if [ ${#message} -gt 50 ]
+then
+    echo "...\""
+else
+    echo "\""
+fi
+echo "git push"
+echo 
+
+read -r -p "Are you sure? [Y/n] " response
+
+case "$response" in
+    [yY][eE][sS]|[yY]) 
+        git add .
+		git commit -m "$message"
+        git push
+	;;
+    *)
+        exit 1
+        ;;
+esac
