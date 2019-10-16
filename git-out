@@ -1,19 +1,22 @@
 #!/bin/bash
 
-message=''
+#message=''
 
-usage() { echo "Usage: $0 [-m  <string>]" 1>&2; exit 1;}
+usage() { echo "Usage: $0 [-m  <string>] [-o <string>]" 1>&2; exit 1;}
 
 if [ $# -gt 0 ]
 then
-    while getopts ":m:h" opt; do #silence errors
+    while getopts ":m:o:h" opt; do #silence errors
         case "${opt}" in
             m)
                 message=${OPTARG}
                 ;;
+			o)
+				remoteURL=${OPTARG}
+				;;
 	    	:)
 	        	echo
-	    		;; 
+	    		;;
 			*)
                 usage
                 ;;
@@ -31,8 +34,8 @@ fi
 
 while [[ ! $message ]]
 do
-    echo "Please enter a commit message."
-    read -r m
+    echo -n "Please enter a commit message: "
+    read message
 done
 
 echo
@@ -53,10 +56,22 @@ read -r -p "Are you sure? [Y/n] " response
 
 case "$response" in
     [yY][eE][sS]|[yY]) 
-        git add .
+		git add .
 		git commit -m "$message"
-        git push
-	;;
+
+		if [[ $(git config --get remote.origin.url) ]] #catch "fatal: No configured push destination." when there are no added remote origins, typically when creating a new repository on the command line
+		then
+			git push
+		else
+			while [[ ! $remoteURL ]]
+			do
+				echo -n "Please enter the remote origin URL: "
+				read remoteURL
+			done
+			git remote add origin "$remoteURL"
+			git push -u origin master
+		fi
+		;;
     *)
         exit 1
         ;;
