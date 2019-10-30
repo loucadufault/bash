@@ -1,6 +1,24 @@
 #!/bin/bash
 
-usage() { echo "Usage: $0 [-a] [-c] [-d <destination>] [-r <source>.c] [<source>.c]" 1>&2; exit 1; }
+depend()
+{
+	if ! command -v gcc > /dev/null 2>&1
+	then
+		echo -e "\agcc command must be installed and available via PATH ('command -v gcc' yields nothing)." 1>&2
+		exit 1
+	fi
+}
+
+usage()
+{
+	echo -e "\aUsage: $0 [-acr] [-h] [-d destination] [-r source] [source]" 1>&2
+	exit 1
+}
+
+help_()
+{
+	echo "TODO"
+}
 
 compile()
 {
@@ -13,6 +31,8 @@ compile()
 	fi
 	gcc "$1" -o "${target}/${1%.*}"
 }
+
+depend #check if dependencies are satisfied
 
 if [ $# -gt 0 ]
 then
@@ -51,7 +71,7 @@ then
 		target="."
 	fi	
 
-	while getopts ":ar:cd:" opt; do #silence errors
+	while getopts ":ar:cd:h" opt; do #silence errors
 		case "${opt}" in
 			d) #skip over this arg as it was already handled above but consume it anyways as it is still a valid option
 				;; #works in case of 'gcco -d target/ -a'
@@ -61,10 +81,6 @@ then
 					for file in *.c; do
 						[ -f "$file" ] || continue 
     					compile "$file"
-						#if [ -f "$file" ] 
-       					#then
-						#	compile "$file"	
-    					#fi 
 					done
 					exit 0
 				else
@@ -96,6 +112,12 @@ then
 					exit 1
 				fi
 				exit 0
+				;;
+			h)
+				help_
+				;;
+			?)
+				usage
 				;;
 		esac
 	done
