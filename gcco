@@ -1,0 +1,119 @@
+#!/bin/bash
+
+usage() { echo "Usage: $0 [-a] [-c] [-d <destination>] [-r <source>.c] [<source>.c]" 1>&2; exit 1; }
+
+compile()
+{
+	echo -n "$1 --> ${1%.*}"
+	if [ "$target" != "." ] 
+	then
+		echo " in ${target}"
+	else
+		echo
+	fi
+	gcc "$1" -o "${target}/${1%.*}"
+}
+
+if [ $# -gt 0 ]
+then
+	while getopts ":d:" opt; do #silence errors, perform the -d option before any other options
+		case "${opt}" in
+			d) #objects will be compiled and placed into the given destination directory
+				if [ ! -e "${OPTARG}" ]
+				then
+					echo "Directory '${OPTARG}' does not exist."
+					read -r -p "Create directory? [Y/n] " response
+					case "$response" in
+    					[yY][eE][sS]|[yY])
+							mkdir "${OPTARG}"
+							;;
+						*)
+							exit 1
+							;;
+					esac
+				elif [ ! -d "${OPTARG}" ]
+				then
+					echo "'${OPTARG}' is not a directory."
+					exit 1
+				fi
+				target="${OPTARG}"
+				;;
+			:) #the required destination argument is not found
+				usage
+				;;
+		esac
+	done
+		
+	OPTIND=1 #reset getopts parsing to first opt
+	
+	if [ -z "$target" ]
+	then
+		target="."
+	fi	
+
+	while getopts ":ar:cd:" opt; do #silence errors
+		case "${opt}" in
+			d) #skip over this arg as it was already handled above but consume it anyways as it is still a valid option
+				;; #works in case of 'gcco -d target/ -a'
+			a) #compile all source files in pwd
+				if ls ./*.c > /dev/null #any source files in pwd
+				then
+					for file in *.c; do
+						[ -f "$file" ] || continue 
+    					compile "$file"
+						#if [ -f "$file" ] 
+       					#then
+						#	compile "$file"	
+    					#fi 
+					done
+					exit 0
+				else
+					echo "No source files ('*.c') in pwd"
+					exit 1
+				fi
+				;;
+			r) #compile source file then run
+				compile "${OPTARG}"
+				echo "$target/${OPTARG%.*}"
+				"$target"/"${OPTARG%.*}"
+				exit 0
+				;;
+			c) #clean up by removing all object files (where the object file name is also the name of a source.c file in the same directory) from the current directory
+				if ls ./*.c > /dev/null #any source files in pwd
+				then
+					for file in *.c; do
+						[ -f "$file" ] || continue
+						if rm "$target/${file%.*}" 2> /dev/null
+						then
+							echo "${file%.*} X"
+							removed=1
+						fi
+					done
+				fi
+				if [ -z $removed ]
+				then
+					echo "No object files to clean up in the present working directory."
+					exit 1
+				fi
+				exit 0
+				;;
+		esac
+	done
+fi
+
+if [ $# -lt 1 ] #no opts or params where passed
+then
+	usage
+fi
+
+if [[ ! $1 = *.c ]] #first (and possibly only) arg passed was not a source file
+then
+	usage
+fi
+
+for param  in "$@"
+do
+	if [[ $param = *.c ]] #arg passed was a source file
+    	compile $param
+	fi
+done
